@@ -1,0 +1,17 @@
+datasets
+evaluate
+huggingface-hub
+matplotlib
+nltk
+numpy
+openai
+pandas
+rouge-score
+scipy
+sentence-transformers
+sentencepiece
+torch
+transformers
+triton
+flash_attn
+googletrans

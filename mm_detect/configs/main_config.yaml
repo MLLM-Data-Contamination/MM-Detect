@@ -1,0 +1,12 @@
+methods:
+  - name: "option-order-sensitivity-test"
+    type: "model"
+    help: "Option Order Sensitivity Test"
+
+  - name: "slot-guessing-for-perturbation-caption"
+    type: "model"
+    help: "Slot Guessing for Perturbation Caption"
+  
+  - name: "pretrain-detect"
+    type: "model"
+    help: "Detect whether there are contamination of MLLMs' pretraining stage"

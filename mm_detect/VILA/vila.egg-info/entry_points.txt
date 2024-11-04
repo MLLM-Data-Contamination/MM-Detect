@@ -1,0 +1,2 @@
+[console_scripts]
+vilarun = llava.cli.run:main
