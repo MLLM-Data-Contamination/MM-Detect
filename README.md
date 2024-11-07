@@ -13,7 +13,7 @@
 </div> -->
 
 # 🕵️ MM-Detect: The First Multimodal Data Contamination Detection Framework
-📖 [arXiv](https://arxiv.org/abs/2411.03823)
+[📖 arXiv](https://arxiv.org/abs/2411.03823)
 
 <!-- TABLE OF CONTENTS
 <details>
