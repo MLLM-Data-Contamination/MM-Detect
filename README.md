@@ -13,7 +13,7 @@
 </div> -->
 
 # 🕵️ MM-Detect: The First Multimodal Data Contamination Detection Framework
-🤗 Paper
+🤗 [Paper](https://arxiv.org/abs/2411.03823)
 
 <!-- TABLE OF CONTENTS
 <details>
@@ -100,7 +100,18 @@ sh scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
 ## Citation
 
 ⭐ If you find our implementation and paper helpful, please consider citing our work ⭐:
-
+- **BibTeX citation**:  
+  ```bibtex
+  @misc{song2024textimagesleakedsystematic,
+    title={Both Text and Images Leaked! A Systematic Analysis of Multimodal LLM Data Contamination},
+    author={Dingjie Song and Sicheng Lai and Shunian Chen and Lichao Sun and Benyou Wang},
+    year={2024},
+    eprint={2411.03823},
+    archivePrefix={arXiv},
+    primaryClass={cs.CV},
+    url={https://arxiv.org/abs/2411.03823},
+  }
+  
 ## Acknowledgement
 
 - [LLaVA](https://github.com/haotian-liu/LLaVA)
