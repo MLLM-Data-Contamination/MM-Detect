@@ -107,7 +107,7 @@ sh scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
   year={2024},
   eprint={2411.03823},
   archivePrefix={arXiv},
-  primaryClass={cs.CL},
+  primaryClass={cs.CV},
   url={https://arxiv.org/abs/2411.03823},
 }
 ```
