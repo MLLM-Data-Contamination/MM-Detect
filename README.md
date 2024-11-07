@@ -110,7 +110,8 @@ sh scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
   primaryClass={cs.CV},
   url={https://arxiv.org/abs/2411.03823},
 }
-  
+```
+
 ## Acknowledgement
 
 - [LLaVA](https://github.com/haotian-liu/LLaVA)
