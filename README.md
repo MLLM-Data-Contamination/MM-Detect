@@ -73,13 +73,13 @@ Our codebase supports the following models on [ScienceQA](https://huggingface.co
   - `Claude-3.5-Sonnet`
 
 🔐 **Important**: When detecting contamination of black-box models, ensure to add your API key at `Line 26` in `mm_detect/mllms/gpt.py`:
-```sh
+```bash
 api_key='your-api-key'
 ```
 
 📌 To run contamination detection for MLLMs, you can follow the multiple test scripts in scripts/tests/mllms folder. For instance, use the following command to run **Option Order Sensitivity Test** on ScienceQA with GPT-4o:
-```sh
-sh scripts/mllms/option_order_sensitivity_test/test_ScienceQA.sh -m gpt-4o
+```bash
+bash scripts/mllms/option_order_sensitivity_test/test_ScienceQA.sh -m gpt-4o
 ```
 ## 🔍 Discern the Source of Contamination
 We support the following LLMs on [MMStar](https://huggingface.co/datasets/Lin-Chen/MMStar):
@@ -93,8 +93,8 @@ We support the following LLMs on [MMStar](https://huggingface.co/datasets/Lin-Ch
   - `Yi`
 
 📌 For instance, use the following command to run the Qwen-7B:
-``` sh
-sh scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
+``` bash
+bash scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
 ```
 
 ## Citation
