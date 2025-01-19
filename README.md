@@ -44,7 +44,7 @@ The rapid progression of multimodal large language models (MLLMs) has demonstrat
 </div>
 
 ## 🤖 Environment Setup
-```sh
+```bash
 git clone https://github.com/FreedomIntelligence/MM-Detect.git
 conda create -n MM-Detect python=3.11.8
 cd MM-Detect
