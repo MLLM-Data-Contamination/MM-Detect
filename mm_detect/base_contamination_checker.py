@@ -56,7 +56,8 @@ class BaseContaminationChecker:
 
     def subsample_eval_data(self):
         if len(self.eval_data) > 0 and self.n_eval_data_points > 0:
-            if self.eval_data_name == "lmms-lab/COCO-Caption2017" or self.eval_data_name == "lmms-lab/NoCaps":
+            # lmms-lab/COCO-Caption2017; lmms-lab/NoCaps
+            if "COCO-Caption2017" in self.eval_data_name or "NoCaps" in self.eval_data_name:
                 p = np.random.permutation(len(self.eval_data))
                 selected_indices = []
                 for idx in p:
@@ -69,7 +70,8 @@ class BaseContaminationChecker:
                         selected_indices.append(idx)
                 self.eval_data = self.eval_data.select(selected_indices)
 
-            elif self.eval_data_name == "SilentAntagonist/vintage-artworks-60k-captioned":
+            # SilentAntagonist/vintage-artworks-60k-captioned
+            elif "vintage-artworks-60k-captioned" in self.eval_data_name:
                 p = np.random.permutation(len(self.eval_data))
                 selected_indices = []
                 for idx in p:
@@ -78,12 +80,12 @@ class BaseContaminationChecker:
 
                     idx = int(idx)
                     data_point = self.eval_data[idx]
-                    # url = data_point["image_url"]
                     if len(data_point["short_caption"]) <= 200:
                         selected_indices.append(idx)
                 self.eval_data = self.eval_data.select(selected_indices)
 
-            elif self.eval_data_name == "derek-thomas/ScienceQA":
+            # derek-thomas/ScienceQA
+            elif "ScienceQA" in self.eval_data_name:
                 p = np.random.permutation(len(self.eval_data))
                 selected_indices = []
                 for idx in p:
@@ -96,7 +98,8 @@ class BaseContaminationChecker:
                         selected_indices.append(idx)
                 self.eval_data = self.eval_data.select(selected_indices)
 
-            elif self.eval_data_name == "Lin-Chen/MMStar":
+            # Lin-Chen/MMStar
+            elif "MMStar" in self.eval_data_name:
                 p = np.random.permutation(len(self.eval_data))
                 selected_indices = []
                 for idx in p:
@@ -108,6 +111,7 @@ class BaseContaminationChecker:
                     if data_point["image"] != None and "Options:" in data_point["question"]:
                         selected_indices.append(idx)
                 self.eval_data = self.eval_data.select(selected_indices)
+
             elif self.eval_data_name == "MMMU/MMMU_Pro":
                 p = np.random.permutation(len(self.eval_data))
                 selected_indices = []

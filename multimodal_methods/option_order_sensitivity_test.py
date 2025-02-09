@@ -12,7 +12,10 @@ from mm_detect.mllms.yi_vl import YiVL
 from mm_detect.mllms.phi3_vision import Phi3
 from mm_detect.mllms.idefics2 import Idefics2
 from mm_detect.mllms.gpt import GPT
+from mm_detect.mllms.deepseek_vl2 import DeepseekVL2
 
+import os
+import json
 import random
 
 logger = get_child_logger("option_order_sensitivity_test")
@@ -27,15 +30,16 @@ def shuffle_choices(choices, answer_index):
             break
     return answer, shuffled_choices, new_answer_index
 
-def build_prompt(
-    example,
-    eval_data_name,
-):
+def build_prompt(example, eval_data_name):
     choices = get_answers_list(example, eval_data_name)
+    if not choices:
+        return "failed", "failed", "failed", "failed", "failed"
+
     text = example["text"]
 
     if eval_data_name == "MMMU/MMMU_Pro":
         text = text.replace("<image 1>", "image")
+    
     answer_index = get_answer_index(example, eval_data_name)
     answer, shuffled_choices, new_answer_index = shuffle_choices(choices, answer_index)
 
@@ -43,7 +47,7 @@ def build_prompt(
     option = alphabet[answer_index]
     new_option = alphabet[new_answer_index]
 
-    prompt = f"Please answer the following multichoice question."
+    prompt = "Please answer the following multichoice question."
     prompt += f"\n\nQuestion: {text}"
     prompt += "\nOptions:"
     for i in range(len(choices)):
@@ -52,7 +56,7 @@ def build_prompt(
         prompt += f"\n{letter}: [{choice}]"
     prompt += "\n\nReply with answer only."
 
-    new_prompt = f"Please answer the following multichoice question."
+    new_prompt = "Please answer the following multichoice question."
     new_prompt += f"\n\nQuestion: {text}"
     new_prompt += "\nOptions:"
     for i in range(len(shuffled_choices)):
@@ -63,31 +67,70 @@ def build_prompt(
 
     return prompt, new_prompt, option, new_option, answer
 
-def inference(
-    data_points,
-    eval_data_name,
-    llm,
-):
-    responses, new_responses, options, new_options, answers = [], [], [], [], []
+def inference(data_points, eval_data_name, llm):
+    responses = []
+    new_responses = []
+    options = []
+    new_options = []
+    answers = []
 
-    id = 1
-    for example in tqdm(data_points):
-        prompt, new_prompt, option, new_option, answer = build_prompt(
-            example,
-            eval_data_name,
-        )
-        if isinstance(llm, QwenVL):
-            response, _ = llm.eval_model(data_point=example, prompt=prompt, id=id)
-            new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt, id=id)
-        else:
-            response, _ = llm.eval_model(data_point=example, prompt=prompt)
-            new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt)
-        id += 1
-        responses.append(response)
-        new_responses.append(new_response)
-        options.append(option)
-        new_options.append(new_option)
-        answers.append(answer)
+    results_file = "/home/leo/workspace/log/deepseek_vl2/results.json"
+    
+    if os.path.exists(results_file) and os.path.getsize(results_file) > 0:
+        with open(results_file, "r") as f:
+            results = json.load(f)
+        last_id = results[-1]["id"] if results else 0
+        start_index = len(results)
+        print(f"Resuming from index {start_index}, last id {last_id}")
+        id_counter = last_id + 1
+    else:
+        results = []
+        start_index = 0
+        id_counter = 1
+
+    for i in tqdm(range(start_index, len(data_points))):
+        example = data_points[i]
+        prompt, new_prompt, option, new_option, answer = build_prompt(example, eval_data_name)
+        if prompt == "failed" or new_prompt == "failed":
+            print(f"Skipping data point index {i} due to build_prompt failure.")
+            continue
+
+        try:
+            if isinstance(llm, QwenVL):
+                response, _ = llm.eval_model(data_point=example, prompt=prompt, id=id_counter)
+                new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt, id=id_counter)
+            else:
+                response, _ = llm.eval_model(data_point=example, prompt=prompt)
+                new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt)
+        except Exception as e:
+            print(f"LLM evaluation error at index {i}: {e}")
+            continue
+
+        entry = {
+            "id": id_counter,
+            "question": example["text"],
+            "original_prompt": prompt,
+            "response": response,
+            "option": option,
+            "shuffled_prompt": new_prompt,
+            "shuffled_response": new_response,
+            "new_option": new_option,
+            "answer": answer
+        }
+        results.append(entry)
+        id_counter += 1
+
+        if (i - start_index + 1) % 10 == 0:
+            with open(results_file, "w") as f:
+                json.dump(results, f, ensure_ascii=False, indent=2)
+            print(f"Saved intermediate results up to data point index {i}")
+
+    for entry in results:
+        responses.append(entry["response"])
+        new_responses.append(entry["shuffled_response"])
+        options.append(entry["option"])
+        new_options.append(entry["new_option"])
+        answers.append(entry["answer"])
 
     return responses, new_responses, options, new_options, answers
 
@@ -199,6 +242,17 @@ def main_option_order_sensitivity_test(
             eval_data_name,
             llm
         )
+    elif "deepseek" in model_name.lower(): 
+        llm = DeepseekVL2(
+            model_name=model_name,
+            max_output_tokens=10,
+            temperature=0.0
+        )
+        responses, new_responses, options, new_options, answers = inference(
+            eval_data,
+            eval_data_name,
+            llm
+        )
 
     responses = [x.lower() for x in responses]
     new_responses = [x.lower() for x in new_responses]
@@ -221,19 +275,15 @@ def main_option_order_sensitivity_test(
     delta = new_correct_rate - correct_rate
     normalized_delta = delta / correct_rate
 
-    if delta > -1:
-        drops = 0
-        for i in range(len(new_responses)):
-            if responses[i] == options[i] or answers[i] in responses[i]:
-                if new_responses[i] != new_options[i] and answers[i] not in new_responses[i]:
-                    drops += 1
-        instance_leakage = drops / len(new_responses)
-    else:
-        instance_leakage = None
+    drops = 0
+    for i in range(len(new_responses)):
+        if responses[i] == options[i] or answers[i] in responses[i]:
+            if new_responses[i] != new_options[i] and answers[i] not in new_responses[i]:
+                drops += 1
+    instance_leakage = drops / len(new_responses)
 
     logger.info(f"Correct Rate: {correct_rate:.2%}")
     logger.info(f"Correct Rate after shuffling: {new_correct_rate:.2%}")
     logger.info(f"Difference of the Correct Rate: {delta:.2%}")
     logger.info(f"Normalized Difference of the Correct Rate: {normalized_delta:.2%}")
-    if instance_leakage != None:
-        logger.info(f"Instance Leakage: {instance_leakage:.2%}")
+    logger.info(f"Instance Leakage: {instance_leakage:.2%}")

@@ -14,6 +14,8 @@ def parse_args():
                         help="The caption key of each data instance.")
     parser.add_argument("--image_key", type=str, default="",
                         help="The key to image content of each data instance.")
+    parser.add_argument("--dataset_name", type=str, default="",
+                        help="If this field is set, we set train_set and eval_set to it") 
     parser.add_argument("--seed", type=int, default=42,
                         help="Random seed")
     parser.add_argument("--eval_data_name", type=str, default="",

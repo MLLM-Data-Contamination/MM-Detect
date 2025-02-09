@@ -23,7 +23,7 @@ class GPT:
     ):
         # load model and processor
         self.client = OpenAI(
-            api_key='YOUR_API_KEY', # Replace with your OpenAI API key.
+            api_key='', # Replace with your OpenAI API key.
         )
 
         self.model = model_name
@@ -98,7 +98,6 @@ class GPT:
         else:
             url = data_point["image_url"]
             response = self.request_gpt_url(text, url)
-        print(response)
 
         return response, 0
 

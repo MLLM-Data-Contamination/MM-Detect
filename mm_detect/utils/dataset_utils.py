@@ -3,9 +3,12 @@ import ast
 
 def get_answers_list(data_point, dataset_name):
     choices = []
-    if dataset_name == "derek-thomas/ScienceQA":
+
+    # derek-thomas/ScienceQA
+    if "ScienceQA" in dataset_name:
         choices = data_point["choices"]
-    elif dataset_name == "Lin-Chen/MMStar":
+    # Lin-Chen/MMStar
+    elif "MMStar" in dataset_name:
         text = data_point["text"]
         # Extract question
         question, options_part  = text.split('Options:', 1)
@@ -23,9 +26,12 @@ def get_answers_list(data_point, dataset_name):
 
 def get_answer_index(data_point, dataset_name):
     alphabet = "abcdefghijklmnopqrstuvwxyz"
-    if dataset_name == "derek-thomas/ScienceQA":
+
+    # derek-thomas/ScienceQA
+    if "ScienceQA" in dataset_name:
         answer_index = data_point["answer"]
-    elif dataset_name == "Lin-Chen/MMStar":
+    # Lin-Chen/MMStar
+    elif "MMStar" in dataset_name:
         answer = data_point["answer"].lower()
         answer_index = alphabet.index(answer)
     elif dataset_name == "MMMU/MMMU_Pro":

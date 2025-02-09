@@ -19,8 +19,10 @@ from mm_detect.mllms.idefics2 import Idefics2
 from mm_detect.mllms.gpt import GPT
 
 import requests
+import io
 from io import BytesIO
 from PIL import Image
+import json
 
 from googletrans import Translator
 translator = Translator()
@@ -34,17 +36,13 @@ def get_stanford_tagger():
         logger.info("First download the tagger here: https://nlp.stanford.edu/software/tagger.html#Download")
         logger.info("Then place it into some directory.")
         # home_dir = input("Please specify the directory where you place the tagger (Example: /home/leo/stanford-postagger-full-2020-11-17): ")
-        os.environ["CLASSPATH"] = "stanford-postagger-full-2020-11-17"
-        os.environ["STANFORD_MODELS"] = "stanford-postagger-full-2020-11-17/models"
+        os.environ["CLASSPATH"] = "MM-Detect/stanford-postagger-full-2020-11-17"
+        os.environ["STANFORD_MODELS"] = "MM-Detect/stanford-postagger-full-2020-11-17/models"
     st = StanfordPOSTagger('english-bidirectional-distsim.tagger')
 
     return st
 
-def build_prompt(
-    example, 
-    tagger,
-    eval_data_name
-):
+def build_prompt(example, tagger, eval_data_name):
     if example.get("caption"):
         if isinstance(example["caption"], str):
             text = example["caption"]
@@ -55,13 +53,22 @@ def build_prompt(
 
     caption = text
 
-    zh_text = translator.translate(text, dest='zh-CN').text
-    trans_text = translator.translate(zh_text, dest='en').text
+    try:
+        zh_text = translator.translate(text, dest='zh-CN').text
+        trans_text = translator.translate(zh_text, dest='en').text
+        back_caption = trans_text
+    except Exception as e:
+        print(f"Translation error for text [{text}]: {e}")
+        return "failed", "", "", "", "", ""
+        
+    print(f"Original: {text}")
+    print(f"Translated: {zh_text}")
+    print(f"Back to English: {trans_text}")
 
     tags = tagger.tag(text.split())
     words = [x for x in tags if x[1] in ['NN', 'JJ', 'VB']]
     if len(words) == 0:
-        return "failed", "", "", "", ""
+        return "failed", "", "", "", "", ""
     idx = np.random.randint(len(words))
     word = words[idx][0].rstrip('.')
     for i in range(len(text)-len(word)+1):
@@ -76,7 +83,7 @@ def build_prompt(
     tags = tagger.tag(trans_text.split())
     new_words = [x for x in tags if x[1] in ['NN', 'JJ', 'VB']]
     if len(new_words) == 0:
-        return "", "", "failed", "", ""
+        return "", "", "failed", "", "", ""
     idx = np.random.randint(len(new_words))
     new_word = new_words[idx][0].rstrip('.')
     for i in range(len(trans_text)-len(new_word)+1):
@@ -88,68 +95,170 @@ def build_prompt(
     new_prompt += f"\n\n{trans_text}"
     new_prompt += "\nOnly reply the word you fill in the [MASK]."
 
-    return prompt, word, new_prompt, new_word, caption
+    return prompt, word, new_prompt, new_word, caption, back_caption
 
-def mllm_inference(
-    data_points, 
-    n_eval, 
-    eval_data_name,
-    llm, 
-):
+def mllm_inference(data_points, n_eval, eval_data_name, llm):
     tagger = get_stanford_tagger()
+    
+    results_file = "/home/leo/workspace/log/gemini/results.json"
+    if os.path.exists(results_file) and os.path.getsize(results_file) > 0:
+        with open(results_file, "r") as f:
+            results = json.load(f)
+        last_id = max(item.get("id", 0) for item in results) if results else 0
+        print(f"Resuming from last saved id {last_id}")
+        start_index = last_id
+    else:
+        results = []
+        last_id = 0
+        start_index = 0
 
-    responses, masked_words, new_responses, new_masked_words = [], [], [], []
-    for example in tqdm(data_points):
-        prompt, masked_word, new_prompt, new_masked_word, caption = build_prompt(
+    save_dir = "/home/leo/workspace/vintage_images/"
+    os.makedirs(save_dir, exist_ok=True)
+    
+    id_counter = last_id + 1 
+
+    for i in tqdm(range(start_index, len(data_points))):
+        # if id_counter == 778:
+        #     id_counter += 1
+        #     continue
+            
+        example = data_points[i]
+        prompt, masked_word, new_prompt, new_masked_word, caption, trans_text = build_prompt(
             example, 
             tagger,
             eval_data_name,
         )
         if prompt == "failed" or new_prompt == "failed":
+            print(f"Skipping data point index {i} due to translation error.")
             continue
 
-        response, _ = llm.eval_model(data_point=example, prompt=prompt)
-        new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt)
+        # If the data point is from the Vintage dataset, download the image and add it to the data point
+        if "vintage" in eval_data_name:
+            try:
+                filename = os.path.join(save_dir, f"{id_counter}.jpg")
+                if os.path.exists(filename):
+                    with open(filename, "rb") as f:
+                        image_bytes = f.read()
+                    print(f"Using cached image for id {id_counter}")
+                else:
+                    img_response = requests.get(example["image_url"])
+                    img_response.raise_for_status()
+                    image_bytes = img_response.content
+                    with open(filename, "wb") as f:
+                        f.write(image_bytes)
+                    print(f"Saved image for id {id_counter}")
+                image = Image.open(io.BytesIO(image_bytes))
+                example["image"] = image
+            except Exception as e:
+                print(f"Exception raised while processing image at index {i}: {e}")
+                continue
 
-        responses.append(response)
-        masked_words.append(masked_word)
-        new_responses.append(new_response)
-        new_masked_words.append(new_masked_word)
+        id_counter += 1
+        
+        try:
+            response, _ = llm.eval_model(data_point=example, prompt=prompt)
+            new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt)
+        except Exception as e:
+            print(f"LLM evaluation error at index {i}: {e}")
+            continue
+
+        entry = {
+            "id": id_counter - 1,
+            "original_caption": caption,
+            "original_mask_word": masked_word,
+            "original_model_output": response,
+            "back_translated_caption": trans_text,
+            "back_translated_mask_word": new_masked_word,
+            "back_translated_model_output": new_response
+        }
+        results.append(entry)
+
+        # Save intermediate results every 10 iterations
+        with open(results_file, "w") as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
+        print(f"Saved intermediate results up to index {i}")
+
+    responses = [entry["original_model_output"] for entry in results]
+    masked_words = [entry["original_mask_word"] for entry in results]
+    new_responses = [entry["back_translated_model_output"] for entry in results]
+    new_masked_words = [entry["back_translated_mask_word"] for entry in results]
 
     return responses, masked_words, new_responses, new_masked_words
 
-def qwen_inference(
-    data_points, 
-    n_eval, 
-    eval_data_name,
-    llm, 
-):
+def qwen_inference(data_points, n_eval, eval_data_name, llm):
     tagger = get_stanford_tagger()
 
-    responses, masked_words, new_responses, new_masked_words = [], [], [], []
-    id = 1
-    for example in tqdm(data_points):
-        # Skip Nocaps' 117 item
-        if eval_data_name == "lmms-lab/NoCaps" and id == 117:
-            id += 1
-            continue
+    results_file = "/home/leo/workspace/log/gemini/qwen_results.json"
+    if os.path.exists(results_file) and os.path.getsize(results_file) > 0:
+        with open(results_file, "r") as f:
+            results = json.load(f)
+        last_id = max(item.get("id", 0) for item in results) if results else 0
+        print(f"Resuming from id {last_id}")
+    else:
+        results = []
+        last_id = 0
 
-        prompt, masked_word, new_prompt, new_masked_word, caption = build_prompt(
+    start_index = last_id  
+    save_dir = "/home/leo/workspace/vintage_images/"
+    os.makedirs(save_dir, exist_ok=True)
+    
+    id_counter = last_id + 1
+
+    for i in tqdm(range(start_index, len(data_points))):
+        example = data_points[i]
+        prompt, masked_word, new_prompt, new_masked_word, caption, trans_text = build_prompt(
             example, 
             tagger,
             eval_data_name,
         )
         if prompt == "failed" or new_prompt == "failed":
+            print(f"Skipping data point index {i} due to translation error.")
             continue
+
+        # If the data point is from the Vintage dataset, download the image and add it to the data point
+        if "vintage" in eval_data_name:
+            try:
+                filename = os.path.join(save_dir, f"{id}.jpg")
+                if os.path.exists(filename):
+                    with open(filename, "rb") as f:
+                        image_bytes = f.read()
+                    print(f"Using cached image for id {id}")
+                else:
+                    img_response = requests.get(example["image_url"])
+                    img_response.raise_for_status()
+                    image_bytes = img_response.content
+                    with open(filename, "wb") as f:
+                        f.write(image_bytes)
+                    print(f"Saved image for id {id}")
+                image = Image.open(io.BytesIO(image_bytes))
+                example["image"] = image
+            except Exception as e:
+                print(f"Exception raised while processing image at index {i}: {e}")
+                continue
 
         response, _ = llm.eval_model(example, prompt=prompt, id=id)
         new_response, _ = llm.eval_model(example, prompt=new_prompt, id=id)
         id += 1
 
-        responses.append(response)
-        masked_words.append(masked_word)
-        new_responses.append(new_response)
-        new_masked_words.append(new_masked_word)
+        entry = {
+            "id": id - 1,
+            "original_caption": caption,
+            "original_mask_word": masked_word,
+            "original_model_output": response,
+            "back_translated_caption": trans_text,
+            "back_translated_mask_word": new_masked_word,
+            "back_translated_model_output": new_response
+        }
+        results.append(entry)
+
+        with open(results_file, "w") as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
+        print(f"Saved intermediate results up to index {i}")
+
+    responses = [entry["original_model_output"] for entry in results]
+    masked_words = [entry["original_mask_word"] for entry in results]
+    new_responses = [entry["back_translated_model_output"] for entry in results]
+    new_masked_words = [entry["back_translated_mask_word"] for entry in results]
 
     return responses, masked_words, new_responses, new_masked_words
 
@@ -284,18 +393,14 @@ def main_slot_guessing_for_perturbation_caption(
     delta = new_em - em
     normalized_delta = delta / em
 
-    if delta > -1:
-        drops = 0
-        for i in range(len(new_responses)):
-            if masked_words[i] in responses[i] and new_masked_words[i] not in new_responses[i]:
-                    drops += 1
-        instance_leakage = drops / len(new_responses)
-    else:
-        instance_leakage = None
+    drops = 0
+    for i in range(len(new_responses)):
+        if masked_words[i] in responses[i] and new_masked_words[i] not in new_responses[i]:
+                drops += 1
+    instance_leakage = drops / len(new_responses)
 
     logger.info(f"Exact Match (EM): {em:.2%}, ROUGE-L F1: {rl:.3f}")
     logger.info(f"Exact Match after Interruption: {new_em:.2%}, ROUGE-L F1 after Interruption: {new_rl:.3f}")
     logger.info(f"EM Difference: {delta:.2%}")
     logger.info(f"Normalized EM Difference: {normalized_delta:.2%}")
-    if instance_leakage != None:
-        logger.info(f"Instance Leakage: {instance_leakage:.2%}")
+    logger.info(f"Instance Leakage: {instance_leakage:.2%}")
