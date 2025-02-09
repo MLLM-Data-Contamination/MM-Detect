@@ -17,6 +17,7 @@ from mm_detect.mllms.yi_vl import YiVL
 from mm_detect.mllms.phi3_vision import Phi3
 from mm_detect.mllms.idefics2 import Idefics2
 from mm_detect.mllms.gpt import GPT
+from mm_detect.mllms.deepseek_vl2 import DeepseekVL2
 
 import requests
 import io
@@ -112,8 +113,10 @@ def mllm_inference(data_points, n_eval, eval_data_name, llm):
         last_id = 0
         start_index = 0
 
-    save_dir = "/home/leo/workspace/vintage_images/"
-    os.makedirs(save_dir, exist_ok=True)
+    # For the vintage dataset, ensure that the local image save directory exists
+    if "vintage" in eval_data_name:
+        save_dir = "/home/leo/workspace/vintage_images/"
+        os.makedirs(save_dir, exist_ok=True)
     
     id_counter = last_id + 1 
 
@@ -186,26 +189,37 @@ def mllm_inference(data_points, n_eval, eval_data_name, llm):
     return responses, masked_words, new_responses, new_masked_words
 
 def qwen_inference(data_points, n_eval, eval_data_name, llm):
-    tagger = get_stanford_tagger()
-
-    results_file = "/home/leo/workspace/log/gemini/qwen_results.json"
+    # Set the results file path (using a different filename to avoid conflicts)
+    results_file = "/home/leo/workspace/log/qwen_results.json"
+    
+    # If the results file exists and is non-empty, resume from the last saved point
     if os.path.exists(results_file) and os.path.getsize(results_file) > 0:
-        with open(results_file, "r") as f:
+        with open(results_file, "r", encoding="utf-8") as f:
             results = json.load(f)
+        # Get the maximum id from the saved results (or 0 if none found)
         last_id = max(item.get("id", 0) for item in results) if results else 0
-        print(f"Resuming from id {last_id}")
+        print(f"Resuming from last saved id {last_id}")
+        start_index = last_id
     else:
         results = []
         last_id = 0
+        start_index = 0
 
-    start_index = last_id  
-    save_dir = "/home/leo/workspace/vintage_images/"
-    os.makedirs(save_dir, exist_ok=True)
-    
+    # For the vintage dataset, ensure that the local image save directory exists
+    if "vintage" in eval_data_name:
+        save_dir = "/home/leo/workspace/vintage_images/"
+        os.makedirs(save_dir, exist_ok=True)
+
+    # Retrieve the Stanford tagger (assuming this function is defined elsewhere)
+    tagger = get_stanford_tagger()
+
+    # Initialize id_counter starting from the next id after the last saved id
     id_counter = last_id + 1
 
+    # Iterate over the data points starting from the last saved index
     for i in tqdm(range(start_index, len(data_points))):
         example = data_points[i]
+        # Build prompt and related information (masked word, translated prompt, etc.)
         prompt, masked_word, new_prompt, new_masked_word, caption, trans_text = build_prompt(
             example, 
             tagger,
@@ -215,33 +229,45 @@ def qwen_inference(data_points, n_eval, eval_data_name, llm):
             print(f"Skipping data point index {i} due to translation error.")
             continue
 
-        # If the data point is from the Vintage dataset, download the image and add it to the data point
+        # For vintage data, process the image: use cached image if available or download and save locally.
+        local_image_path = None
         if "vintage" in eval_data_name:
             try:
-                filename = os.path.join(save_dir, f"{id}.jpg")
+                filename = os.path.join(save_dir, f"{id_counter}.jpg")
                 if os.path.exists(filename):
                     with open(filename, "rb") as f:
                         image_bytes = f.read()
-                    print(f"Using cached image for id {id}")
+                    print(f"Using cached image for id {id_counter}")
                 else:
                     img_response = requests.get(example["image_url"])
                     img_response.raise_for_status()
                     image_bytes = img_response.content
                     with open(filename, "wb") as f:
                         f.write(image_bytes)
-                    print(f"Saved image for id {id}")
+                    print(f"Saved image for id {id_counter}")
+                # Set the local image path to pass to the llm.eval_model as the 'id' parameter
+                local_image_path = filename
                 image = Image.open(io.BytesIO(image_bytes))
                 example["image"] = image
             except Exception as e:
                 print(f"Exception raised while processing image at index {i}: {e}")
                 continue
 
-        response, _ = llm.eval_model(example, prompt=prompt, id=id)
-        new_response, _ = llm.eval_model(example, prompt=new_prompt, id=id)
-        id += 1
+        # Increase the id_counter after processing the image
+        id_counter += 1
 
+        try:
+            # Evaluate the model using the original prompt and pass the local image path as 'id'
+            response, _ = llm.eval_model(data_point=example, prompt=prompt, id=local_image_path)
+            # Evaluate the model using the back-translated prompt
+            new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt, id=local_image_path)
+        except Exception as e:
+            print(f"LLM evaluation error at index {i}: {e}")
+            continue
+
+        # Create an entry with the results
         entry = {
-            "id": id - 1,
+            "id": id_counter - 1,
             "original_caption": caption,
             "original_mask_word": masked_word,
             "original_model_output": response,
@@ -251,10 +277,17 @@ def qwen_inference(data_points, n_eval, eval_data_name, llm):
         }
         results.append(entry)
 
-        with open(results_file, "w") as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
-        print(f"Saved intermediate results up to index {i}")
+        # Save intermediate results every 10 iterations
+        if (i + 1) % 10 == 0:
+            with open(results_file, "w", encoding="utf-8") as f:
+                json.dump(results, f, ensure_ascii=False, indent=2)
+            print(f"Saved intermediate results up to index {i}")
 
+    # Save the final results after processing all data points
+    with open(results_file, "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+    
+    # Extract and return outputs
     responses = [entry["original_model_output"] for entry in results]
     masked_words = [entry["original_mask_word"] for entry in results]
     new_responses = [entry["back_translated_model_output"] for entry in results]
@@ -368,6 +401,17 @@ def main_slot_guessing_for_perturbation_caption(
 
     elif "gpt" in model_name.lower() or "gemini" in model_name.lower() or "claude" in model_name.lower(): 
         llm = GPT(
+            model_name=model_name,
+            temperature=0.0
+        )
+        responses, masked_words, new_responses, new_masked_words = mllm_inference(
+            data_points, 
+            n_eval_data_points,
+            eval_data_name,
+            llm
+        )
+    elif "deepseek" in model_name.lower(): 
+        llm = DeepseekVL2(
             model_name=model_name,
             temperature=0.0
         )
