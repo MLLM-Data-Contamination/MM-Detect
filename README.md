@@ -73,6 +73,7 @@ Our codebase supports the following models on [ScienceQA](https://huggingface.co
   - `Phi-3-vision-instruct`
   - `Yi-VL`
   - `InternVL2`
+  - `DeepSeek-VL2`
 
 - **Grey-box Models:**
   - `fuyu`
