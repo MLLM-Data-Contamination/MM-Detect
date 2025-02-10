@@ -6,8 +6,7 @@ from io import BytesIO
 
 import os
 import sys
-# The absolute path to the mm_detect directory.
-sys.path.append(os.path.abspath("/home/leo/workspace/MM-Detect/mm_detect"))
+sys.path.append(os.path.abspath("/home/leo/workspace/MM-Detect/mm_detect/packages"))
 
 from VILA.llava.constants import (
     DEFAULT_IM_END_TOKEN,

@@ -5,8 +5,7 @@ import json
 from tqdm import tqdm
 
 import sys
-# The absolute path to the mm_detect directory.
-sys.path.append(os.path.abspath("/home/leo/workspace/MM-Detect/mm_detect"))
+sys.path.append(os.path.abspath("/home/leo/workspace/MM-Detect/mm_detect/packages"))
 
 from LLaVA.llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from LLaVA.llava.conversation import conv_templates, SeparatorStyle

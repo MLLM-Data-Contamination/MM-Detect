@@ -2,7 +2,7 @@ import torch
 from transformers import AutoModelForCausalLM
 
 import sys
-sys.path.append("/home/leo/workspace/MM-Detect/mm_detect/DeepSeek-VL2")
+sys.path.append("/home/leo/workspace/MM-Detect/mm_detect/packages/DeepSeek-VL2")
 from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
 from deepseek_vl2.utils.io import load_pil_images
 
