@@ -88,7 +88,7 @@ Our codebase supports the following models on [ScienceQA](https://huggingface.co
 api_key='your-api-key'
 ```
 
-🌱 To save intermediate results and enable the Resume function, please add your output_dir at `line 77` in `multimodal_methods/option_order_sensitivity_test.py` and at `line 104` in `multimodal_methods/slot_guessing_for_perturbation_caption.py`:
+🌱 To **save intermediate results** and enable the **Resume** function, please add your output_dir at `line 77` in `multimodal_methods/option_order_sensitivity_test.py` and at `line 104` in `multimodal_methods/slot_guessing_for_perturbation_caption.py`:
 ```bash
 results_file = "output_dir/results.json"
 ```
