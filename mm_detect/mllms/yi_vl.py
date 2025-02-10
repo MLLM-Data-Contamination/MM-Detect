@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import sys
 # The absolute path to the mm_detect directory.
-sys.path.append(os.path.abspath("/remote_shome/songdj/workspace/MM-Detect/mm_detect"))
+sys.path.append(os.path.abspath("/home/leo/workspace/MM-Detect/mm_detect"))
 
 from Yi.VL.llava.conversation import conv_templates
 from Yi.VL.llava.mm_utils import (

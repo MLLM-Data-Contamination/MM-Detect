@@ -54,6 +54,13 @@ pip install googletrans==3.1.0a0
 pip install httpx==0.27.2
 ```
 
+Ensure that your system has Java installed to enable the use of the [Stanford POS Tagger](https://nlp.stanford.edu/).
+
+```bash
+sudo apt update
+sudo apt install openjdk-11-jdk
+```
+
 <!-- GETTING STARTED -->
 ## 🚀 Run MM-Detect
 Our codebase supports the following models on [ScienceQA](https://huggingface.co/datasets/derek-thomas/ScienceQA), [MMStar](https://huggingface.co/datasets/Lin-Chen/MMStar), [COCO-Caption](https://huggingface.co/datasets/lmms-lab/COCO-Caption2017), [Nocaps](https://huggingface.co/datasets/lmms-lab/NoCaps) and [Vintage](https://huggingface.co/datasets/SilentAntagonist/vintage-artworks-60k-captioned):
@@ -100,9 +107,9 @@ We support the following LLMs on [MMStar](https://huggingface.co/datasets/Lin-Ch
 bash scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
 ```
 
-## Citation
+## ⏳ Citation
 
-⭐ If you find our implementation and paper helpful, please consider citing our work ⭐:
+⭐ If you find our implementation and paper helpful, please consider citing our work and starring the repository⭐:
 ```bibtex
 @misc{song2024textimagesleakedsystematic,
   title={Both Text and Images Leaked! A Systematic Analysis of Multimodal LLM Data Contamination},
@@ -114,6 +121,15 @@ bash scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
   url={https://arxiv.org/abs/2411.03823},
 }
 ```
+
+## 🛠 Troubleshooting
+
+If you encounter the following error when using [googletrans](https://pypi.org/project/googletrans/):
+
+```python
+AttributeError: module 'httpcore' has no attribute 'SyncHTTPTransport'
+```
+please refer to the solution provided on [this Stack Overflow page](https://stackoverflow.com/questions/72796594/attributeerror-module-httpcore-has-no-attribute-synchttptransport) for further guidance.
 
 ## Acknowledgement
 
