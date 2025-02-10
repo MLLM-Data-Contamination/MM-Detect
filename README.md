@@ -39,9 +39,13 @@
 
 The rapid progression of multimodal large language models (MLLMs) has demonstrated superior performance on various multimodal benchmarks. However, the issue of data contamination during training creates challenges in performance evaluation and comparison. While numerous methods exist for detecting dataset contamination in large language models (LLMs), they are less effective for **MLLMs** due to their various modalities and multiple training phases. Therefore, we introduce a multimodal data contamination detection framework, **MM-Detect**. Besides, we employ a heuristic method to discern whether the contamination originates from the **pre-training phase of LLMs**.
 
-<div align="center">
+<!-- <div align="center">
   <img src="images/figure1.png" alt="MM-Detect">
-</div>
+</div> -->
+
+<p align="center">
+  <img src="images/figure1.png" alt="MM-Detect" width="500">
+</p>
 
 ## 🤖 Environment Setup
 ```bash
