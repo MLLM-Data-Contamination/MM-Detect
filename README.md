@@ -44,7 +44,7 @@ The rapid progression of multimodal large language models (MLLMs) has demonstrat
 </div> -->
 
 <p align="center">
-  <img src="images/figure1.png" alt="MM-Detect" width="500">
+  <img src="MM-Detect/images/figure1.png" alt="MM-Detect" width="500">
 </p>
 
 ## 🤖 Environment Setup
