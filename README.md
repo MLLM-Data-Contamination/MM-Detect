@@ -108,7 +108,7 @@ We support the following LLMs on [MMStar](https://huggingface.co/datasets/Lin-Ch
 bash scripts/llms/detect_pretrain/test_MMStar.sh -m Qwen/Qwen-7B
 ```
 
-## ⏳ Citation
+## 🎉 Citation
 
 ⭐ If you find our implementation and paper helpful, please consider citing our work and starring the repository⭐:
 ```bibtex
@@ -132,7 +132,7 @@ AttributeError: module 'httpcore' has no attribute 'SyncHTTPTransport'
 ```
 please refer to the solution provided on [this Stack Overflow page](https://stackoverflow.com/questions/72796594/attributeerror-module-httpcore-has-no-attribute-synchttptransport) for further guidance.
 
-## Acknowledgement
+## ❤️ Acknowledgement
 
 - [LLaVA](https://github.com/haotian-liu/LLaVA)
 - [LLMSanitize](https://github.com/ntunlp/LLMSanitize)
