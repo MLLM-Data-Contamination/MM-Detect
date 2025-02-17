@@ -116,6 +116,7 @@ We support the following LLMs on [MMStar](https://huggingface.co/datasets/Lin-Ch
   - `Mistral`
   - `Phi-3-instruct`
   - `Yi`
+  - `DeepSeek-MoE-Chat`
 
 📌 For instance, use the following command to run the Qwen-7B:
 ``` bash
