@@ -121,10 +121,6 @@ def mllm_inference(data_points, n_eval, eval_data_name, llm):
     id_counter = last_id + 1 
 
     for i in tqdm(range(start_index, len(data_points))):
-        # if id_counter == 778:
-        #     id_counter += 1
-        #     continue
-            
         example = data_points[i]
         prompt, masked_word, new_prompt, new_masked_word, caption, trans_text = build_prompt(
             example, 

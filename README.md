@@ -13,6 +13,8 @@
 </div> -->
 
 # 🕵️ MM-Detect: The First Multimodal Data Contamination Detection Framework
+**Dingjie Song**, **Sicheng Lai**, Shunian Chen, Lichao Sun, Benyou Wang*
+
 [🤗 Paper](https://huggingface.co/papers/2411.03823#community) | [📖 arXiv](https://arxiv.org/abs/2411.03823)
 
 <!-- TABLE OF CONTENTS
@@ -33,6 +35,9 @@
 </details> -->
 
 <!-- ABOUT THE PROJECT -->
+
+<!-- # 🌈 Update -->
+
 ## Overview
 
 <!-- [![Product Name Screen Shot][product-screenshot]](https://example.com) -->

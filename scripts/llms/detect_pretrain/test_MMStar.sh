@@ -7,7 +7,7 @@ done
 
 echo "model name ", $model_name
 
-python main.py\
+python main.py \
 --eval_data_name Lin-Chen/MMStar \
 --eval_set_key val \
 --text_key question \
