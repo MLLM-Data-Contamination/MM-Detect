@@ -38,7 +38,7 @@ def build_prompt(
         letter = alphabet[i]
         choice = choices[i]
         prompt += f"\n{letter}: {choice}"
-    prompt += "\n\nReply with answer only."
+    prompt += "\nIf you do not know the answer, output '''I don't know'''.\nOnly reply with your answer."
 
     return prompt, option, answer
 
