@@ -36,7 +36,14 @@
 
 <!-- ABOUT THE PROJECT -->
 
-<!-- # 🌈 Update -->
+## 🌈 Updates
+
+- 🏆 **Accepted to ICML 2025 Workshop DIG-BUG**  
+  📅 **Date of Acceptance**: June 2025  
+  🎤 **Oral Presentation**
+
+  <!-- - [Paper](URL) -->
+  - [DIG-BUG](https://icml2025digbugs.github.io/)  
 
 ## Overview
 
