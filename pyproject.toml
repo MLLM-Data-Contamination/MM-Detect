@@ -3,7 +3,7 @@ name = "mm-detect"
 version = "1.0.0"
 description = "The First Multimodal Data Contamination Detection Framework"
 authors = [
-    "Sicheng Lai <sicheng.lai@example.com>",
+    "Leo Lai <sichenglai6@gmail.com>",
 ]
 license = "MIT"
 readme = "README.md"
