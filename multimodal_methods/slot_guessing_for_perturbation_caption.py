@@ -7,6 +7,7 @@ from nltk.tokenize import word_tokenize
 from nltk.tag import StanfordPOSTagger
 from mm_detect.utils.logger import get_child_logger, suspend_logging
 from mm_detect.utils.dataset_utils import get_answers_list
+from mm_detect.utils.resume_manager import create_resume_manager
 
 from mm_detect.mllms.llava import LLaVA
 from mm_detect.mllms.vila import VILA
@@ -299,6 +300,9 @@ def main_slot_guessing_for_perturbation_caption(
     model_name: str = None,
     max_output_tokens: int = 128,
     temperature: float = 0.0,
+    # resume functionality
+    resume_enabled: bool = False,
+    output_dir: str = None,
 ):
     data_points = []
     for i in range(n_eval_data_points):

@@ -7,6 +7,9 @@ import base64
 import requests
 from io import BytesIO
 
+# Import configuration utilities
+from mm_detect.utils.config import get_config
+
 def encode_image(image):
     buffered = io.BytesIO()
     image_format = image.format 
@@ -21,14 +24,22 @@ class GPT:
         max_output_tokens: int = 30,
         temperature: float = 0.0,
     ):
-        # load model and processor
+        # Load configuration
+        config = get_config()
+        
+        # Validate OpenAI configuration
+        if not config.validate_config('openai'):
+            raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY in your .env file.")
+        
+        # Initialize OpenAI client with API key from environment
         self.client = OpenAI(
-            api_key='', # Replace with your OpenAI API key.
+            api_key=config.openai_api_key,
+            base_url=config.openai_base_url,
         )
 
-        self.model = model_name
-        self.max_tokens = max_output_tokens
-        self.temperature = temperature
+        self.model = model_name or config.default_model
+        self.max_tokens = max_output_tokens if max_output_tokens != 30 else config.max_tokens
+        self.temperature = temperature if temperature != 0.0 else config.temperature
 
     def request_gpt(self, gpt_prompt, image):
         image_format, base64_image = encode_image(image)

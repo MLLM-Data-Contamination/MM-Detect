@@ -2,6 +2,7 @@ import numpy as np
 from tqdm import tqdm
 from mm_detect.utils.logger import get_child_logger
 from mm_detect.utils.dataset_utils import get_answers_list, get_answer_index
+from mm_detect.utils.resume_manager import create_resume_manager
 
 from mm_detect.mllms.qwen_vl import QwenVL
 from mm_detect.mllms.llava import LLaVA
@@ -67,26 +68,36 @@ def build_prompt(example, eval_data_name):
 
     return prompt, new_prompt, option, new_option, answer
 
-def inference(data_points, eval_data_name, llm):
+def inference(data_points, eval_data_name, llm, resume_enabled=False, output_dir=None):
     responses = []
     new_responses = []
     options = []
     new_options = []
     answers = []
 
-    results_file = "/home/leo/workspace/log/deepseek_vl2/results.json"
+    # Initialize resume manager
+    model_name = getattr(llm, 'model_name', llm.__class__.__name__)
+    resume_manager = create_resume_manager("option_order_sensitivity_test", model_name, eval_data_name, output_dir)
     
-    if os.path.exists(results_file) and os.path.getsize(results_file) > 0:
-        with open(results_file, "r") as f:
-            results = json.load(f)
-        last_id = results[-1]["id"] if results else 0
-        start_index = len(results)
-        print(f"Resuming from index {start_index}, last id {last_id}")
-        id_counter = last_id + 1
+    results = []
+    start_index = 0
+    id_counter = 1
+    
+    # Check for resume
+    if resume_enabled and resume_manager.can_resume():
+        resume_state = resume_manager.load_checkpoint()
+        if resume_state:
+            resume_manager.print_resume_info()
+            results = resume_state.results.get('items', [])
+            completed_indices = resume_manager.get_completed_indices()
+            start_index = len(completed_indices)
+            id_counter = max(completed_indices) + 1 if completed_indices else 1
+            print(f"Resuming from index {start_index}, last id {id_counter-1}")
+        else:
+            print("Resume requested but no valid checkpoint found. Starting from beginning.")
     else:
+        print("Starting fresh run.")
         results = []
-        start_index = 0
-        id_counter = 1
 
     for i in tqdm(range(start_index, len(data_points))):
         example = data_points[i]
@@ -104,6 +115,7 @@ def inference(data_points, eval_data_name, llm):
                 new_response, _ = llm.eval_model(data_point=example, prompt=new_prompt)
         except Exception as e:
             print(f"LLM evaluation error at index {i}: {e}")
+            resume_manager.mark_item_failed(i, str(e))
             continue
 
         entry = {
@@ -120,10 +132,21 @@ def inference(data_points, eval_data_name, llm):
         results.append(entry)
         id_counter += 1
 
+        # Mark item as processed and save checkpoint
+        resume_manager.mark_item_processed(i, entry)
+        
+        # Save checkpoint every 10 items
         if (i - start_index + 1) % 10 == 0:
-            with open(results_file, "w") as f:
-                json.dump(results, f, ensure_ascii=False, indent=2)
-            print(f"Saved intermediate results up to data point index {i}")
+            result_data = {"items": results}
+            resume_manager.save_checkpoint(len(data_points), i + 1, result_data)
+            print(f"Saved checkpoint up to data point index {i}")
+
+    # Final checkpoint save
+    if results:
+        result_data = {"items": results}
+        resume_manager.save_checkpoint(len(data_points), len(data_points), result_data)
+        print(f"✅ Completed processing all {len(data_points)} data points")
+        resume_manager.cleanup_checkpoint()
 
     for entry in results:
         responses.append(entry["response"])
@@ -142,6 +165,9 @@ def main_option_order_sensitivity_test(
     model_name: str = None,
     max_output_tokens: int = 128,
     temperature: float = 0.0,
+    # resume functionality
+    resume_enabled: bool = False,
+    output_dir: str = None,
 ):
     if "llava" in model_name.lower():
         llm = LLaVA(
@@ -152,7 +178,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "vila" in model_name.lower():
         llm = VILA(
@@ -163,7 +191,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "internvl2" in model_name.lower(): 
         llm = InterVL2(
@@ -174,7 +204,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "idefics" in model_name.lower(): 
         llm = Idefics2(
@@ -185,7 +217,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "qwen" in model_name.lower(): 
         llm = QwenVL(
@@ -196,7 +230,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "fuyu" in model_name.lower(): 
         llm = Fuyu(
@@ -207,7 +243,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "yi-vl" in model_name.lower(): 
         llm = YiVL(
@@ -218,7 +256,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "phi-3-vision" in model_name.lower(): 
         llm = Phi3(
@@ -229,7 +269,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "gpt" in model_name.lower() or "gemini" in model_name.lower() or "claude" in model_name.lower(): 
         llm = GPT(
@@ -240,7 +282,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
     elif "deepseek" in model_name.lower(): 
         llm = DeepseekVL2(
@@ -251,7 +295,9 @@ def main_option_order_sensitivity_test(
         responses, new_responses, options, new_options, answers = inference(
             eval_data,
             eval_data_name,
-            llm
+            llm,
+            resume_enabled,
+            output_dir
         )
 
     responses = [x.lower() for x in responses]

@@ -1,0 +1,13 @@
+name: MM-Detect
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - poetry>=1.8.0
+  - openjdk=11
+  - pip
+  - git
+variables:
+  JAVA_HOME: $CONDA_PREFIX
+  PATH: $JAVA_HOME/bin:$PATH

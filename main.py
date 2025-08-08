@@ -41,6 +41,10 @@ def parse_args():
                         help="Max number of output tokens")
     parser.add_argument("--temperature", type=float, default=0.0,
                         help="Temperature when sampling each sample")
+    
+    # Resume functionality
+    parser.add_argument("--resume", action="store_true",
+                        help="Resume from previous checkpoint if available")
 
     args = parser.parse_args()
 

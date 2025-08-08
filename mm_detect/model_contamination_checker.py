@@ -30,6 +30,9 @@ class ModelContaminationChecker(BaseContaminationChecker):
             model_name=self.model_name,
             max_output_tokens=self.max_output_tokens,
             temperature=self.temperature,
+            # resume functionality
+            resume_enabled=getattr(self.args, 'resume', False),
+            output_dir=self.args.output_dir,
         )
 
     def contamination_slot_guessing_for_perturbation_caption(self):
@@ -41,6 +44,9 @@ class ModelContaminationChecker(BaseContaminationChecker):
             model_name=self.model_name,
             max_output_tokens=self.max_output_tokens,
             temperature=self.temperature,
+            # resume functionality
+            resume_enabled=getattr(self.args, 'resume', False),
+            output_dir=self.args.output_dir,
         )
 
     def contamination_pretrain_detect(self):
