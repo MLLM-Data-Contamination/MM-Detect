@@ -4,6 +4,7 @@
 
 [![arXiv](https://img.shields.io/badge/arXiv-2411.03823-b31b1b.svg)](https://arxiv.org/abs/2411.03823)
 [![Hugging Face](https://img.shields.io/badge/🤗%20Hugging%20Face-Paper-yellow)](https://huggingface.co/papers/2411.03823#community)
+[![EMNLP 2025](https://img.shields.io/badge/EMNLP%202025-Findings-red)](https://2025.emnlp.org/)
 [![ICML 2025](https://img.shields.io/badge/ICML%202025-DIG--BUG%20Workshop-blue)](https://icml2025digbugs.github.io/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/downloads/)
@@ -37,13 +38,7 @@
 
 ## 🏆 Latest Updates
 
-<div align="center">
-
-🎉 **ACCEPTED TO ICML 2025 Workshop DIG-BUG (Oral Presentation)**  
-📅 **Acceptance Date:** June 2025 | 🎤 **Oral Presentation**
-
-</div>
-
+- **[August 2025]** 🎉 Paper accepted to [EMNLP 2025](https://2025.emnlp.org/) **Findings** track
 - **[June 2025]** 🏆 Paper accepted to [ICML 2025 DIG-BUG Workshop](https://icml2025digbugs.github.io/) as **oral presentation**
 
 ---
@@ -461,14 +456,14 @@ If you encounter issues not covered above:
 If you find MM-Detect helpful in your research, please consider citing our work:
 
 ```bibtex
-@misc{song2024textimagesleakedsystematic,
-  title={Both Text and Images Leaked! A Systematic Analysis of Multimodal LLM Data Contamination},
-  author={Dingjie Song and Sicheng Lai and Shunian Chen and Lichao Sun and Benyou Wang},
-  year={2024},
-  eprint={2411.03823},
-  archivePrefix={arXiv},
-  primaryClass={cs.CV},
-  url={https://arxiv.org/abs/2411.03823},
+@misc{song2025textimagesleakedsystematic,
+      title={Both Text and Images Leaked! A Systematic Analysis of Data Contamination in Multimodal LLM}, 
+      author={Dingjie Song and Sicheng Lai and Mingxuan Wang and Shunian Chen and Lichao Sun and Benyou Wang},
+      year={2025},
+      eprint={2411.03823},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2411.03823}, 
 }
 ```
 
